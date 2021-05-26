@@ -1,0 +1,184 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
+    <!-- google font -->
+    <link href="https://fonts.googleapis.com/css?family=Ovo" rel="stylesheet" />
+    <script src="https://unpkg.com/pdf-lib@1.4.0"></script>
+    <script src="https://unpkg.com/downloadjs@1.4.7"></script>
+    <script src="/js/pdf.js"></script>
+    <script
+      type="text/javascript"
+      src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://mozilla.github.io/pdf.js/build/pdf.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://mozilla.github.io/pdf.js/build/pdf.worker.js"
+    ></script>
+    <style>
+      body {
+        font-family: "Ovo !important";
+        background-color: #ebedee;
+      }
+      .card {
+        border-radius: 20px;
+      }
+      button.border {
+        border-radius: 10px;
+      }
+    </style>
+    <title><%= title%></title>
+  </head>
+  <body>
+    <div style="float: left">
+      <div style="display: none">
+        <p id="x-axis"></p>
+        <p id="y-axis"></p>
+      </div>
+
+      <div class="card p-5 ml-3" style="margin-top: 20%">
+        <div class="form-group">
+          <input
+            type="text"
+            class="form-control"
+            id="text"
+            placeholder="Enter Text.."
+          />
+        </div>
+        <div class="form-group">
+          <input
+            type="text"
+            class="form-control"
+            id="font"
+            placeholder="Enter font size..."
+          />
+        </div>
+        <button onclick="inserttext()" class="btn btn-info border">
+          Insert
+        </button>
+      </div>
+    </div>
+    <div style="float: right; margin: 40px">
+      <canvas id="pdf" style="border: 1px solid gainsboro"></canvas>
+      <div>
+        <button onclick="download()" class="btn btn-primary m-2 border">
+          Download
+        </button>
+      </div>
+    </div>
+  </body>
+  <!-- </center> -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.3/jspdf.min.js"></script>
+  <script type="text/javascript">
+    function download() {
+      var canvas = document.getElementById("pdf");
+      // only jpeg is supported by jsPDF
+      var imgData = canvas.toDataURL("image/jpeg", 1.0);
+      var pdf = new jsPDF();
+      pdf.addImage(imgData, "JPEG", 0, 0);
+      pdf.save("download.pdf");
+    }
+    function inserttext() {
+      var text = document.getElementById("text").value;
+      var size = document.getElementById("font").value;
+      var canvas = document.getElementById("pdf");
+      var context = canvas.getContext("2d");
+      var x = document.getElementById("x-axis").innerHTML;
+      var y = document.getElementById("y-axis").innerHTML;
+      context.fillStyle = "black";
+      context.font = "bold " + size + "px Arial";
+      context.fillText(text, x, y);
+    }
+
+    function getMousePosition(canvas, event) {
+      let rect = canvas.getBoundingClientRect();
+      let x = event.clientX - rect.left;
+      let y = event.clientY - rect.top;
+      document.getElementById("x-axis").innerHTML = x;
+      document.getElementById("y-axis").innerHTML = y;
+      console.log("Coordinate x: " + x, "Coordinate y: " + y);
+    }
+  </script>
+
+  <script>
+    window.onload = function () {
+      let canvasElem = document.getElementById("pdf");
+
+      canvasElem.addEventListener("mousedown", function (e) {
+        getMousePosition(canvasElem, e);
+      });
+
+      var image = "<%= imageName %>";
+      var url = "http://localhost:5000/uploads/" + image;
+
+      // var url = x;
+      // Loaded via <script> tag, create shortcut to access PDF.js exports.
+      var pdfjsLib = window["pdfjs-dist/build/pdf"];
+
+      // The workerSrc property shall be specified.
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "//mozilla.github.io/pdf.js/build/pdf.worker.js";
+
+      // Asynchronous download of PDF
+      var loadingTask = pdfjsLib.getDocument(url);
+      loadingTask.promise.then(
+        function (pdf) {
+          console.log("PDF loaded");
+
+          // Fetch the first page
+          var pageNumber = 1;
+          pdf.getPage(pageNumber).then(function (page) {
+            console.log("Page loaded");
+
+            var scale = 0.8;
+            var viewport = page.getViewport({ scale: scale });
+
+            // Prepare canvas using PDF page dimensions
+            var canvas = document.getElementById("pdf");
+            var context = canvas.getContext("2d");
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            // Render PDF page into canvas context
+            var renderContext = {
+              canvasContext: context,
+              viewport: viewport,
+            };
+            var renderTask = page.render(renderContext);
+            renderTask.promise.then(function () {
+              console.log("Page rendered");
+            });
+          });
+        },
+        function (reason) {
+          // PDF loading error
+          console.error(reason);
+        }
+      );
+    };
+  </script>
+  <script
+    src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+    integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+    integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+    integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"
+  ></script>
+</html>

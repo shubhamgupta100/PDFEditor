@@ -32,7 +32,7 @@ router.post("/", upload, function (req, res, next) {
       if (err) throw err;
       res.render("main", {
         imageName,
-        title: "Upload A File ....",
+        title: "Edit a text ....",
       });
     });
   });

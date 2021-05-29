@@ -5,6 +5,11 @@ const uploadSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    expireAt: {
+      type: Date,
+      default: Date.now,
+      index: { expires: "1m" },
+    },
   },
   {
     timestamps: true,
